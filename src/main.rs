@@ -1,4 +1,5 @@
 use clap::Parser;
+use colored::*;
 use std::collections::BTreeMap;
 use std::fmt::Write;
 use std::io::{self, BufRead};
@@ -20,21 +21,29 @@ enum LineEntry {
     Indent(String),
 }
 
+#[derive(clap::Args, Debug)]
+struct Options {
+    #[arg(short, long)]
+    compact: bool,
+    #[arg(long)]
+    color: bool,
+}
+
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    #[arg(short, long)]
-    compact: bool,
+    #[command(flatten)]
+    options: Options,
 }
 
 fn main() {
     let paths = io::stdin().lock().lines().map_while(Result::ok).collect();
     let args = Args::parse();
 
-    print!("{}", generate_tree_from_paths(&paths, args.compact));
+    print!("{}", generate_tree_from_paths(&paths, &args.options));
 }
 
-fn generate_tree_from_paths(paths: &Vec<String>, compact: bool) -> String {
+fn generate_tree_from_paths(paths: &Vec<String>, options: &Options) -> String {
     let mut root = Tree::new();
     for path_str in paths {
         if !path_str.trim().is_empty() {
@@ -42,13 +51,34 @@ fn generate_tree_from_paths(paths: &Vec<String>, compact: bool) -> String {
         }
     }
 
-    let entries = format_tree_as_entries(&root, "", compact);
+    let entries = format_tree_as_entries(&root, "", options.compact);
     let mut result = String::new();
     for entry in entries {
         match entry {
-            LineEntry::File(s) | LineEntry::Directory(s) => write!(&mut result, "{}\n", s).unwrap(),
-            LineEntry::Connector(s) | LineEntry::Indent(s) => write!(&mut result, "{}", s).unwrap(),
+            LineEntry::File(s) | LineEntry::Directory(s) => {
+                write!(
+                    &mut result,
+                    "{}\n",
+                    if options.color {
+                        s.blue().to_string()
+                    } else {
+                        s
+                    }
+                )
+            }
+            LineEntry::Connector(s) | LineEntry::Indent(s) => {
+                write!(
+                    &mut result,
+                    "{}",
+                    if options.color {
+                        s.bright_black().to_string()
+                    } else {
+                        s
+                    }
+                )
+            }
         }
+        .unwrap();
     }
     result
 }
@@ -172,7 +202,10 @@ mod tests {
                 .iter()
                 .map(|&s| s.into())
                 .collect(),
-                false
+                &Options {
+                    compact: false,
+                    color: false
+                }
             ),
             r#"└── nvim
     ├── after
@@ -245,7 +278,10 @@ mod tests {
                 .iter()
                 .map(|&s| s.into())
                 .collect(),
-                true
+                &Options {
+                    compact: true,
+                    color: false
+                }
             ),
             r#"└── dotfiles/nvim
     ├── after/lsp
