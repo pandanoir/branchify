@@ -12,6 +12,14 @@ enum Node {
     Directory(Tree),
 }
 
+#[derive(Debug, PartialEq)]
+enum LineEntry {
+    File(String),
+    Directory(String),
+    Connector(String),
+    Indent(String),
+}
+
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
@@ -23,7 +31,7 @@ fn main() {
     let paths = io::stdin().lock().lines().map_while(Result::ok).collect();
     let args = Args::parse();
 
-    println!("{}", generate_tree_from_paths(&paths, args.compact));
+    print!("{}", generate_tree_from_paths(&paths, args.compact));
 }
 
 fn generate_tree_from_paths(paths: &Vec<String>, compact: bool) -> String {
@@ -34,7 +42,15 @@ fn generate_tree_from_paths(paths: &Vec<String>, compact: bool) -> String {
         }
     }
 
-    return format_tree_as_string(&root, "", compact);
+    let entries = format_tree_as_entries(&root, "", compact);
+    let mut result = String::new();
+    for entry in entries {
+        match entry {
+            LineEntry::File(s) | LineEntry::Directory(s) => write!(&mut result, "{}\n", s).unwrap(),
+            LineEntry::Connector(s) | LineEntry::Indent(s) => write!(&mut result, "{}", s).unwrap(),
+        }
+    }
+    result
 }
 
 fn add_path_to_tree(tree: &mut Tree, path: &Path) {
@@ -74,9 +90,9 @@ fn add_path_to_tree(tree: &mut Tree, path: &Path) {
     }
 }
 
-/// Recursively prints the tree structure to the console.
-fn format_tree_as_string(tree: &Tree, prefix: &str, compact: bool) -> String {
-    let mut result = String::new();
+/// Recursively builds a vector of LineEntry structs representing the tree structure.
+fn format_tree_as_entries(tree: &Tree, prefix: &str, compact: bool) -> Vec<LineEntry> {
+    let mut entries = Vec::new();
     let mut iter = tree.iter().peekable();
     while let Some((name, node)) = iter.next() {
         let mut compacted_name = name.clone();
@@ -100,26 +116,22 @@ fn format_tree_as_string(tree: &Tree, prefix: &str, compact: bool) -> String {
         }
 
         let is_last = iter.peek().is_none();
+        let connector = if is_last { "└── " } else { "├── " };
 
-        write!(
-            &mut result,
-            "{}{}{}\n",
-            prefix,
-            if is_last { "└── " } else { "├── " },
-            compacted_name
-        )
-        .unwrap();
+        entries.push(LineEntry::Indent(prefix.to_string()));
+        entries.push(LineEntry::Connector(connector.to_string()));
+        entries.push(if let Node::Directory(_) = node_to_print {
+            LineEntry::Directory(compacted_name)
+        } else {
+            LineEntry::File(compacted_name)
+        });
 
         if let Node::Directory(subtree) = node_to_print {
-            result += format_tree_as_string(
-                subtree,
-                &format!("{}{}", prefix, if is_last { "    " } else { "│   " }),
-                compact,
-            )
-            .as_str();
+            let new_prefix = format!("{}{}", prefix, if is_last { "    " } else { "│   " });
+            entries.extend(format_tree_as_entries(subtree, &new_prefix, compact));
         }
     }
-    return result;
+    entries
 }
 
 #[cfg(test)]
@@ -268,6 +280,30 @@ mod tests {
         ├── setup-lazynvim.lua
         └── use-extui.lua
 "#
+        );
+    }
+
+    #[test]
+    fn test_format_tree_as_lines() {
+        let mut tree = Tree::new();
+        add_path_to_tree(&mut tree, Path::new("a/b"));
+        add_path_to_tree(&mut tree, Path::new("a/c"));
+
+        let lines = format_tree_as_entries(&tree, "", false);
+
+        assert_eq!(
+            lines,
+            vec![
+                LineEntry::Indent("".to_string()),
+                LineEntry::Connector("└── ".to_string()),
+                LineEntry::Directory("a".to_string()),
+                LineEntry::Indent("    ".to_string()),
+                LineEntry::Connector("├── ".to_string()),
+                LineEntry::File("b".to_string()),
+                LineEntry::Indent("    ".to_string()),
+                LineEntry::Connector("└── ".to_string()),
+                LineEntry::File("c".to_string())
+            ]
         );
     }
 }
