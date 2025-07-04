@@ -66,17 +66,15 @@ fn generate_tree_from_paths(paths: &Vec<String>, options: &Options) -> String {
                     }
                 )
             }
-            LineEntry::Connector(s) | LineEntry::Indent(s) => {
-                write!(
-                    &mut result,
-                    "{}",
-                    if options.color {
-                        s.bright_black().to_string()
-                    } else {
-                        s
-                    }
-                )
-            }
+            LineEntry::Connector(s) | LineEntry::Indent(s) => write!(
+                &mut result,
+                "{}",
+                if options.color {
+                    s.bright_black().to_string()
+                } else {
+                    s
+                }
+            ),
         }
         .unwrap();
     }
@@ -340,6 +338,20 @@ mod tests {
                 LineEntry::Connector("└── ".to_string()),
                 LineEntry::File("c".to_string())
             ]
+        );
+    }
+
+    #[test]
+    fn test_generate_tree_with_color() {
+        colored::control::set_override(true);
+        let paths: Vec<String> = vec!["a/b".into(), "a/c".into()];
+        let options = &Options {
+            compact: false,
+            color: true,
+        };
+        assert_eq!(
+            generate_tree_from_paths(&paths, options),
+            "\u{1b}[90m\u{1b}[0m\u{1b}[90m└── \u{1b}[0m\u{1b}[34ma\u{1b}[0m\n\u{1b}[90m    \u{1b}[0m\u{1b}[90m├── \u{1b}[0m\u{1b}[34mb\u{1b}[0m\n\u{1b}[90m    \u{1b}[0m\u{1b}[90m└── \u{1b}[0m\u{1b}[34mc\u{1b}[0m\n"
         );
     }
 }
