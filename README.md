@@ -3,14 +3,14 @@
 branchify は、標準入力からファイルパスのリストを受け取ってディレクトリツリー形式で出力するシンプルなCLIツールです。
 
 ```console
-$ find . -type f
+$ find . -type f | sed 's|^\./||'
 src/main.rs
 src/lib/tree_generator.rs
 target/debug/branchify
 Cargo.toml
 README.md
 
-$ find . -type f | ./target/debug/branchify
+$ find . -type f | sed 's|^\./||' | ./target/debug/branchify
 ├── Cargo.toml
 ├── README.md
 ├── src
