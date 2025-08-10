@@ -10,7 +10,7 @@ target/debug/branchify
 Cargo.toml
 README.md
 
-$ find . -type f | sed 's|^\./||' | ./target/debug/branchify
+$ find . -type f | sed 's|^\./||' | branchify
 ├── Cargo.toml
 ├── README.md
 ├── src
