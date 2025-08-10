@@ -2,6 +2,26 @@
 
 branchify は、標準入力からファイルパスのリストを受け取ってディレクトリツリー形式で出力するシンプルなCLIツールです。
 
+```console
+$ find . -type f
+src/main.rs
+src/lib/tree_generator.rs
+target/debug/branchify
+Cargo.toml
+README.md
+
+$ find . -type f | ./target/debug/branchify
+├── Cargo.toml
+├── README.md
+├── src
+│   ├── lib
+│   │   └── tree_generator.rs
+│   └── main.rs
+└── target
+    └── debug
+        └── branchify
+```
+
 ## 機能
 
 標準入力からファイルパスのリストを読み込み、ディレクトリとファイルの階層構造を出力します。
