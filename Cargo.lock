@@ -53,6 +53,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "branchify"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "colored",
+]
+
+[[package]]
 name = "clap"
 version = "4.5.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -148,14 +156,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1885c039570dc00dcb4ff087a89e185fd56bae234ddc7f056a945bf36467248d"
 dependencies = [
  "proc-macro2",
-]
-
-[[package]]
-name = "rust_tree_cli"
-version = "0.1.0"
-dependencies = [
- "clap",
- "colored",
 ]
 
 [[package]]

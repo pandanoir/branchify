@@ -1,5 +1,5 @@
 [package]
-name = "rust_tree_cli"
+name = "branchify"
 version = "0.1.0"
 edition = "2021"
 
